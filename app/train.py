@@ -14,9 +14,13 @@ FEATURES = [
     'schoolsup_yes',
     'higher_yes',
     'internet_yes',
-    'Mjob_health',
-    'Mjob_other',
+    'Mjob_teacher',
     'Fjob_teacher',
+    'traveltime',
+    'famsup_yes',
+    'paid_yes',
+    'famrel',
+    'Walc',
 ]
 
 TARGET = "FinalGrade"

@@ -1,3 +1,5 @@
+from typing import Dict
+
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 
@@ -14,38 +16,54 @@ class ScoringModel:
     """Scoring model containing a preprocessor and a ML model. Can be used with differents features and models."""
 
     def __init__(self, FEATURES, TARGET, reg):
-        """
-        Parameters
-        ----------
-        FEATURES : list
-            Features to use
-        TARGET : list
-            Target
-        reg : sklearn model
-            Scikit-learn regression model
-        """
-
         self.FEATURES = FEATURES
-
         self.TARGET = TARGET
-
         self.reg = reg
-
         self.fitted = False
 
-    def preprocess(self, data):
+    def preprocess(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Preprocess the dataframe by making a one-hot encoding of all categorical features.
+
+        Args:
+            data (pd.DataFrame): the data.
+
+        Returns:
+            pd.DataFrame: preprocessed data.
+        """
         df = pd.get_dummies(data)
         transformed_df = df[self.FEATURES + [self.TARGET]]
         return transformed_df
 
-    def fit(self, data):
+    def fit(self, data: pd.DataFrame) -> None:
+        """
+        Preprocess data and fit it to the model (Gradient Boosted Regressor).
+
+        Args:
+            data (pd.DataFrame): the raw data.
+        """
         df = self.preprocess(data)
         X = df[self.FEATURES]
         y = df[self.TARGET]
         self.reg.fit(X, y)
         self.fitted = True
 
-    def predict(self, data):
+    def get_features_importance(self) -> Dict[str, float]:
+        d = dict(zip(self.reg.feature_names_in_, self.reg.feature_importances_))
+        return dict(sorted(d, key=lambda item: item[1]))
+
+    def predict(self, data: pd.DataFrame) -> float:
+        """
+        given data, make predictions.
+        The improvability score is given by: predicted grade - actual grade.
+        This way it is higher for students with lower grades, and if the model predicts that this students should have a good grade based on his/her situation.
+
+        Args:
+            data (pd.DataFrame): the input data to be predicted
+
+        Returns:
+            float: improvability score.
+        """
         assert self.fitted, "Need to fit the model before making inference"
         df = self.preprocess(data)
         potential_grade = self.reg.predict(df[self.FEATURES])
@@ -55,19 +73,13 @@ class ScoringModel:
 
 def compute_manual_score(data, coeff_dict: dict):
     """
+    Compute manual score based on study time, absences and alcohol consumption on weekdays.
 
-    Parameters
-    ----------
-    data : Pandas dataframe
-        DataFrame containing 'studytime', 'Dalc', 'absences'.
-    coeff_dict : dict
-        Coefficient of 'studytime', 'Dalc', 'absences' used to compute a weighted score.
+        Args:
+            data (pd.DataFrame): DataFrame containing 'studytime', 'Dalc', 'absences'.
 
-    Returns
-    -------
-    score : ndarray
-        Score of each student in the dataframe.
-
+        Returns:
+            float: improvability score.
     """
     scaler = MinMaxScaler().fit_transform
 
